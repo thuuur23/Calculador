@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Inteligente</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --primary: #4f46e5;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 4px;
+        }
+
+        .header-icon {
+            font-size: 28px;
+            background: #e0e7ff;
+            padding: 8px;
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+            color: #111827;
+        }
+
+        .header p {
+            font-size: 13px;
+            margin: 2px 0 0 0;
+            color: var(--text-muted);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .badge-ativa {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #0f172a;
+            aspect-ratio: 4/3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .operation-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .operation-display {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-cancelar {
+            background-color: var(--danger-bg);
+            color: var(--danger-text);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cancelar:hover {
+            background-color: #fecaca;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 12px 0;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .footer-instruction {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            padding: 0 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-icon">🧮</div>
+            <div>
+                <h1>Calculadora Inteligente</h1>
+                <p>Reconhecimento de números e operações com as mãos</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>Câmara</span>
+                <span class="badge-ativa">Ativa</span>
+            </div>
+            <div class="video-wrapper">
+                <img src="{{ url_for('video_feed') }}" alt="Transmissão da Câmara">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">Operação identificada</div>
+            <div class="operation-container">
+                <div id="txt-operacao" class="operation-display">A carregar...</div>
+                <button class="btn-cancelar" onclick="cancelarConta()">Cancelar</button>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="result-row">
+                <span class="result-label">Resultado</span>
+                <span id="txt-resultado" class="result-value">-</span>
+            </div>
+        </div>
+
+        <div id="txt-instrucao" class="footer-instruction">
+            Mostre os dedos e segure o gesto por 3 segundos para confirmar.
+        </div>
+    </div>
+
+    <script>
+        function cancelarConta() {
+            fetch('/cancelar', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Conta reiniciada com sucesso");
+                });
+        }
+
+        // Atualiza os dados da interface a cada 200 milissegundos consultando o Python
+        setInterval(() => {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    let opHtml = "";
+                    let instHtml = "";
+
+                    if (data.estado === "NUM1") {
+                        opHtml = `${data.dedos} <span style="font-size:16px; color:#6b7280;">(1º Número Atual)</span>`;
+                        instHtml = `Passo 1: Mostre o 1º número e segure por 3s.`;
+                        document.getElementById('txt-resultado').innerText = "-";
+                    } 
+                    else if (data.estado === "OP") {
+                        let opSinal = {1: "+", 2: "-", 3: "*", 4: "/"}[data.dedos] || "?";
+                        opHtml = `${data.val1} <span style="color:#4f46e5;">${opSinal}</span> ?`;
+                        instHtml = `Passo 2: Escolha a operação (1 a 4 dedos) e segure por 3s.`;
+                    } 
+                    else if (data.estado === "NUM2") {
+                        opHtml = `${data.val1} ${data.operacao} ${data.dedos} <span style="font-size:16px; color:#6b7280;">(2º Número Atual)</span>`;
+                        instHtml = `Passo 3: Mostre o 2º número e segure por 3s.`;
+                    } 
+                    else if (data.estado === "RESULTADO") {
+                        opHtml = `${data.val1} ${data.operacao} ${data.val2}`;
+                        document.getElementById('txt-resultado').innerText = data.resultado;
+                        instHtml = `Cálculo concluído! Feche a mão (0 dedos) para reiniciar.`;
+                    }
+
+                    document.getElementById('txt-operacao').innerHTML = opHtml;
+                    document.getElementById('txt-instrucao').innerText = instHtml;
+                });
+        }, 200);
+    </script>
+</body>
+</html>
